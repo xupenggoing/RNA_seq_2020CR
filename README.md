@@ -1,11 +1,11 @@
 # Cancer_Res_2020
-This is the learning of 2020 Cancer Res paper (doi: 10.1158/0008-5472)
+This is the learning notes of *Cancer Research* paper published by our lab in 2020 (doi: 10.1158/0008-5472). Since I'm a beginner of bioinformatics; so, I'd like to put it as detailed as possible. All the analyses below were performed on Yale HPC web server; thus, some command lines may be only suitable for the Yale web server users. However, it's easy to make minor changes and get your own versions.
 
 ## 1. Data preparation
-According to the description of paper: RNA-sequencing (RNA-seq) data were deposited in the National Center for Biotechnology Information (NCBI) Gene Expression Omnibus database under accession number GSE121105. Searching GSE121105, we find there are 21 files in this dataset. From the description here and the original paper, we need to figure out the experimental design.
+According to the description of paper: RNA-sequencing (RNA-seq) data were deposited in the National Center for Biotechnology Information (NCBI) Gene Expression Omnibus database under accession number GSE121105. Searching **GSE121105**, we find there are 21 datasets. From the description here and the original paper, we need to figure out the experimental design.
 
 ### 1.1 Download Datasets
-In GEO page, we can acquire the **SRP164949**, also we can click the **SRA Run Selector**, from which we can get more detailed information about the experiment design. Also, there are two important information: 1) the cells come from human; 2) this is the single-ended sequencing; 3) sequencing platform is Illumina HiSeq 2000; 4) the AvgSpotLen is 100.
+In GEO page, we can acquire **SRP164949**, also we can click the **SRA Run Selector**, from which we can get more detailed information about the experiment design. Here are several important information: 1) the cells come from human; 2) this is the single-ended sequencing; 3) sequencing platform is Illumina HiSeq 2000; 4) the AvgSpotLen is 100.
 
 To download these original data, I prefer to use SRA Explorer. When I search SRP164949, I can get 21 results. Click the box on the left side of Title, `add 21 to collection`. Click upright `21 saved datasets` and click `Raw FastQ Download URLs`.
 
@@ -294,10 +294,9 @@ sbatch run_sam2bam.sh
 
 We use Samtools to generate .bam.bai files. 
 
-Simple usage: `samtools index BT474_Rep1.sam`
+Simple usage: `samtools index BT474_Rep1.bam`
 ```
-samtools index G1_Rep1.bam
-awk '{print "samtools index "$2".sam"}' ../sample_info.txt > indexing_bam.sh
+awk '{print "samtools index "$2".bam"}' ../sample_info.txt > indexing_bam.sh
 ```
 
 ```
@@ -345,9 +344,15 @@ featureCounts -s -T 24 -t exon -g gene_id -a ../3_mapping_via_hisat2/human_ref_g
 module load Subread/2.0.3-GCC-10.2.0
 sbatch featureCounts_via_subread.sh
 ```
+More configurations:
+- -p, paired-end reads ##for paired-ended reads
+- -s, strand-specific read counting
+- -T, threads
+
+After counting the reads, I creat a novel directory `5_readscounting_via_featureCounts` under `2020_cancer_res` and mv the result `2020_cancer_res_RNA_counts.txt` into it.
 ```
--p, paired-end reads ##for paired-ended reads
--s, strand-specific read counting
--T, threads
+mkdir 5_readscounting_via_featureCounts
+cd 5_readscounting_via_featureCounts
+mv ../4_sam2bam/2020_cancer_res_RNA_counts.txt ./
 ```
 Then we use other tutorials to perform the downstream analysis: http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
