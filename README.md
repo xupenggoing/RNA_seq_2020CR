@@ -56,15 +56,16 @@ sbatch download_data.sh
 ```
 
 ### 1.2 Unzip and Rename Datasets
-I prefer to unzip and rename these datasets according to the experiment design. Below it the experiment design:
+I prefer to unzip and rename these datasets according to the experiment design. Below it’s the experiment design:
 
 <img width="1207" alt="image" src="https://user-images.githubusercontent.com/24839999/206330149-cf3df222-d7d4-4ab3-a3e5-81b5aa93e5da.png">
 
-We can perform unzip and rename in the same step. Click the Metadata in **SRA Run Selector**, open with Microsoft Excel, choose Data->Text to Columns->Delimited->Next->Comma->Next->Finish. Then we can get the metadata and can easily sort out the file format we need.
+We can perform unzip and rename in a single step. Click the Metadata in **SRA Run Selector**, by which you can download it. Open it with Microsoft Excel, choose Data->Text to Columns->Delimited->Next->Comma->Next->Finish. Then we can get the metadata and can easily sort out the file format we need.
 
 <img width="1208" alt="image" src="https://user-images.githubusercontent.com/24839999/206332508-36b927e6-cc88-4fcb-9859-a814031229fb.png">
 
 ```
+##Creat a sample information file
 vi sample_info.txt
 
 SRR7997161	BT474_Rep1
@@ -76,32 +77,31 @@ SRR7997166	BT474_TRA_Rep3
 SRR7997167	BT474_TRA_PER_Rep1
 SRR7997168	BT474_TRA_PER_Rep2
 SRR7997169	BT474_TRA_PER_Rep3
-SRR7997170	BT-TR1
-SRR7997171	BT-TR1
-SRR7997172	BT-TR1
-SRR7997173	BT-TR2
-SRR7997174	BT-TR2
-SRR7997175	BT-TR2
-SRR7997176	BT-TPR1
-SRR7997177	BT-TPR1
-SRR7997178	BT-TPR1
-SRR7997179	BT-TPR2
-SRR7997180	BT-TPR2
-SRR7997181	BT-TPR2
+SRR7997170	BT_TR1_Rep1
+SRR7997171	BT_TR1_Rep2
+SRR7997172	BT_TR1_Rep3
+SRR7997173	BT_TR2_Rep1
+SRR7997174	BT_TR2_Rep2
+SRR7997175	BT_TR2_Rep3
+SRR7997176	BT_TPR1_Rep1
+SRR7997177	BT_TPR1_Rep2
+SRR7997178	BT_TPR1_Rep3
+SRR7997179	BT_TPR2_Rep1
+SRR7997180	BT_TPR2_Rep1
+SRR7997181	BT_TPR2_Rep3
 ```
-
 We generate a sample_info.txt file here and copy content from metadata to this file. **TRA** is short for trastuzumab, **PER** is short for pertuzumab, **TR** stands for trastuzumab-resistant, **TPR** stands for trastuzumab + pertuzumab-resistant.
 
 Then we can use `sample_info.txt` to simply the downstream analysis.
 ```
-awk '{print "gunzip -c "$1".fastq.gz > "$2}' sample_info.txt > gunzip.sh
+awk '{print "gunzip -c "$1".fastq.gz > "$2}' sample_info.txt > unzip_rename.sh
 
-##creat a data unzip and rename script - start line##
+##creat a data run_unzip_rename script - start line##
 
-vi unzip_rename.sh
+vi run_unzip_rename.sh
 
 #!/bin/bash
-#SBATCH --job-name=unzip_rename
+#SBATCH --job-name=run_unzip_rename
 #SBATCH --out="slurm-%j.out"
 #SBATCH --time=1-
 #SBATCH --nodes=1
@@ -109,16 +109,17 @@ vi unzip_rename.sh
 #SBATCH --mem=64G
 #SBATCH --mail-type=ALL
 
-gunzip.sh
+source unzip_rename.sh
 
-##creat a data unzip and rename script - end line##
+##creat a data run_unzip_rename script - end line##
 
-sbatch unzip_rename.sh
+sbatch run_unzip_rename.sh
 ```
+- **Trouble shooting**: 1) in `run_unzip_rename.sh` script, I can't call `unzip_rename.sh` directly, it turned out `unzip_rename.sh: command not found`; 2) when I add work directory for `unzip_rename.sh` and put `./unzip_rename.sh`, it turned out `./unzip_rename.sh: Permission denied`;3) I used `source` and put `source unzip_rename.sh` to get this issue fixed.
 ## 2. QC and trimming
 Previously, we can perform QC and Trimming seperately. However, the novel softwares are emerging, some are powerful enough to perform QC and Trimming in a single step, such as Fastp.
 
-Previously, I have installed Fastp in my environment. You can create a new environment called RNA_Seq (specified with the -n option) and install fastp into it with the following command lines.
+I installed Fastp in my environment before. You can create a new environment called RNA_Seq (specified with the -n option) and install Fastp into it with the following command lines.
 ```
 module load miniconda/4.9.2 #load miniconda in the module
 conda create -n RNA_Seq fastp
@@ -136,6 +137,7 @@ fastp -i in.fq -o out.fq
 ```
 fastp -i in.R1.fq.gz -I in.R2.fq.gz -o out.R1.fq.gz -O out.R2.fq.gz
 ```
+To begin the QC and trimming with Fastp, I make a novl directory under `2020_cancer_res` named `2_QC_trimming_via_fastp`.
 Taking `BT474_Rep1.fq` as an example, the command line is `fastp -i BT474_Rep1.fq -o BT474_Rep1_trimmed.fq`.
 
 ```
