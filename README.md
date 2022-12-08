@@ -163,16 +163,153 @@ sbatch fastp_QC_trimming.sh
 ## 3. Mapping
 Mapping is the most important step in the RNA-seq analysis.
 ### 3.1 Build human reference genome
+You can download the human reference genome from the following link: https://www.ncbi.nlm.nih.gov/assembly/GCF_000001405.40. Note that you need to download both reference genome data (.fna) and annotation data (.gft). You can download them to you laptop and then tranfer then to the web server. Also, you can download them to the web server directly via `wget link_address`.
 
+```
+wget https://www.ncbi.nlm.nih.gov/projects/r_gencoll/ftp_service/nph-gc-ftp-service.cgi/?HistoryId=MCID_6390e4bdef461250ef424de0&QueryKey=1&ReleaseType=RefSeq&FileType=GENOME_FASTA&Flat=true
+
+wget https://www.ncbi.nlm.nih.gov/projects/r_gencoll/ftp_service/nph-gc-ftp-service.cgi/?HistoryId=MCID_6390e4bdef461250ef424de0&QueryKey=1&ReleaseType=RefSeq&FileType=GENOME_GTF&Flat=true
+
+nohup gunzip GCF_000001405.40_GRCh38.p14_genomic.fna.gz &
+nohup gunzip GCF_000001405.40_GRCh38.p14_genomic.gtf.gz &
+```
+Then you need to build the reference genome because they can't be used directly.
+```
+##creat a ref_genome_build - start line##
+vi ref_genome_build.sh
+
+#!/bin/bash
+#SBATCH --job-name=ref_genome_build
+#SBATCH --out="slurm-%j.out"
+#SBATCH --time=1-
+#SBATCH --nodes=1
+#SBATCH -c 20
+#SBATCH --mem=64G
+#SBATCH --mail-type=ALL
+
+hisat2-build GCF_000001405.40_GRCh38.p14_genomic.fna hisat2_built_Genome 1>hisat2-build.log 2>&1
+
+##creat a ref_genome_build - end line##
+
+module load HISAT2/2.2.1-gompi-2020b
+sbatch ref_genome_build.sh
+
+```
+After the building, you will get 8 files. Previously, I have perform the same steps in other projects. So I don't need to re-run the code. I can use what I generated before.
 
 ### 3.2 Mapping to the reference genome
+We will use HISAT2 for RNA-seq reads mapping.
+
+```
+hisat2 --new-summary -p 10 -x ./grch38_snp_tran/genome_snp_tran -U G1_Rep1_R1_val_1.fq -S G1_Rep1_R1.sam --rna-strandness RF --summary-file G1_Rep1_R1_alignment_summary.txt
+
+awk '{print "fastp -i "$2".fq -o "$2"_trimmed.fq"}' sample_info.txt > unpaired_hisat2.sh
+
+```
+Here `-U` means unpaired, `--ran-strandness`, RF. Then we generate `run_unpaired_hisat2_mapping.sh`
+```
+vi run_unpaired_hisat2_mapping.sh
+
+##creat a run_unpaired_hisat2_mapping script - start line##
+
+#!/bin/bash
+#SBATCH --job-name=run_unpaired_hisat2_mapping
+#SBATCH --out="slurm-%j.out"
+#SBATCH --time=1-
+#SBATCH --nodes=1
+#SBATCH -c 20
+#SBATCH --mem=64G
+#SBATCH --mail-type=ALL
+
+unpaired_hisat2.sh
+
+##creat a run_unpaired_hisat2_mapping script - start line##
+
+module load HISAT2/2.2.1-gompi-2020b
+sbatch run_unpaired_hisat2_mapping.sh
 
 ### 3.3 SAM files to BAM files
 
+We use Samtools to convert SAM files to BAM files.
+```
+samtools sort G1_Rep1.sam -o G1_Rep1.bam
+awk '{print "fastp -i "$2".fq -o "$2"_trimmed.fq"}' sample_info.txt > sam2bam.sh
+
+```
+vi run_sam2bam.sh
+
+##creat a run_sam2bam script - start line##
+
+#!/bin/bash
+#SBATCH --job-name=run_sam2bam
+#SBATCH --out="slurm-%j.out"
+#SBATCH --time=1-
+#SBATCH --nodes=1
+#SBATCH -c 20
+#SBATCH --mem=64G
+#SBATCH --mail-type=ALL
+
+sam2bam.sh
+##creat a run_sam2bam script - end line##
+
+module load SAMtools/1.16-GCCcore-10.2.0
+sbatch run_sam2bam.sh
+```
 
 ### 3.4 Indexing BAM files
 
+We use Samtools to generate .bam.bai files.
+```
+samtools index G1_Rep1.bam
+awk '{print "fastp -i "$2".fq -o "$2"_trimmed.fq"}' sample_info.txt > indexing_bam.sh
+```
+
+```
+vi run_indexing_bam.sh
+
+##creat a run_indexing_bam script - start line##
+
+#!/bin/bash
+#SBATCH --job-name=run_sam2bam
+#SBATCH --out="slurm-%j.out"
+#SBATCH --time=1-
+#SBATCH --nodes=1
+#SBATCH -c 20
+#SBATCH --mem=64G
+#SBATCH --mail-type=ALL
+
+indexing_bam.sh
+##creat a run_indexing_bam script - end line##
+
+module load SAMtools/1.16-GCCcore-10.2.0
+sbatch run_indexing_bam.sh
+```
 
 ## 4. Counting reads by Subread
 We use `featureCounts` in `Subread` to perform the reads counting.
 
+```
+#!/bin/bash
+#SBATCH --job-name=featureCounts_via_Subread_selfIndexRefGenome
+#SBATCH --out="slurm-%j.out"
+#SBATCH --time=1-
+#SBATCH --nodes=1
+#SBATCH -c 20
+#SBATCH --mem=64G
+#SBATCH --mail-type=ALL
+
+featureCounts -t exon -g gene_id -a ../Human_Ref_Genome/GCF_000001405.40_GRCh38.p14_genomic.gtf -o Yao_RNA_counts.txt G1_Rep1_selfIndex.bam G1_Rep2_selfIndex.bam G1_Rep3_selfIndex.bam G2_Rep1_selfIndex.bam G2_Rep2_selfIndex.bam G2_Rep3_selfIndex.bam
+
+module load Subread/2.0.3-GCC-10.2.0
+sbatch featureCounts_via_Subread_selfIndexRefGenome.sh
+```
+
+For paired-ended reads,
+```
+-p, paired-end reads
+-s, strand-specific read counting
+-T, threads
+
+featureCounts -p -T 24 -t exon -g gene_id -a ../Human_Ref_Genome/GCF_000001405.40_GRCh38.p14_genomic.gtf -o Yao_RNA_counts.txt G1_Rep1_selfIndex.bam G1_Rep2_selfIndex.bam G1_Rep3_selfIndex.bam G2_Rep1_selfIndex.bam G2_Rep2_selfIndex.bam G2_Rep3_selfIndex.bam
+```
+Then we use other tutorials to perform the downstream analysis.
