@@ -87,14 +87,14 @@ SRR7997176	BT_TPR1_Rep1
 SRR7997177	BT_TPR1_Rep2
 SRR7997178	BT_TPR1_Rep3
 SRR7997179	BT_TPR2_Rep1
-SRR7997180	BT_TPR2_Rep1
+SRR7997180	BT_TPR2_Rep2
 SRR7997181	BT_TPR2_Rep3
 ```
 We generate a sample_info.txt file here and copy content from metadata to this file. **TRA** is short for trastuzumab, **PER** is short for pertuzumab, **TR** stands for trastuzumab-resistant, **TPR** stands for trastuzumab + pertuzumab-resistant.
 
-Then we can use `sample_info.txt` to simply the downstream analysis.
+Then we can use `sample_info.txt` to simply the downstream analysis. The final command line of unzip and rename is `gunzip -c raw_data_name.fastq.gz > novel_name.fastq`
 ```
-awk '{print "gunzip -c "$1".fastq.gz > "$2}' sample_info.txt > unzip_rename.sh
+awk '{print "gunzip -c "$1".fastq.gz > "$2".fastq"}' sample_info.txt > unzip_rename.sh
 
 ##creat a data run_unzip_rename script - start line##
 
