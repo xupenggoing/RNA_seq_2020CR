@@ -252,13 +252,13 @@ sbatch run_unpaired_hisat2_mapping.sh
 After mapping, make a novel directory for the `summary.txt` files.
 ```
 mkdir alignment_summary
-mv *summary.txt ./alignment_summary
+mv *summary.txt ./alignment_summary/
 ```
 ### 3.3 SAM files to BAM files
 Before performing format transforming, I'd like to make a novel directory `4_sam2bam` under `2020_cancer_res` and move the generated sam files into it.
 ```
 mkdir 4_sam2bam
-cd 4_sam2bam
+cd 4_sam2bam/
 mv ../3_mapping_via_hisat2/*.sam ./
 ```
 We use Samtools to convert SAM files to BAM files. The uasge of Samtools: http://www.htslib.org/doc/samtools.html
@@ -292,10 +292,12 @@ sbatch run_sam2bam.sh
 
 ### 3.4 Indexing BAM files
 
-We use Samtools to generate .bam.bai files.
+We use Samtools to generate .bam.bai files. 
+
+Simple usage: `samtools index BT474_Rep1.sam`
 ```
 samtools index G1_Rep1.bam
-awk '{print "fastp -i "$2".fq -o "$2"_trimmed.fq"}' sample_info.txt > indexing_bam.sh
+awk '{print "samtools index "$2".sam"}' ../sample_info.txt > indexing_bam.sh
 ```
 
 ```
@@ -304,7 +306,7 @@ vi run_indexing_bam.sh
 ##creat a run_indexing_bam script - start line##
 
 #!/bin/bash
-#SBATCH --job-name=run_sam2bam
+#SBATCH --job-name=run_indexing_bam
 #SBATCH --out="slurm-%j.out"
 #SBATCH --time=1-
 #SBATCH --nodes=1
@@ -312,7 +314,8 @@ vi run_indexing_bam.sh
 #SBATCH --mem=64G
 #SBATCH --mail-type=ALL
 
-indexing_bam.sh
+source indexing_bam.sh
+
 ##creat a run_indexing_bam script - end line##
 
 module load SAMtools/1.16-GCCcore-10.2.0
@@ -321,10 +324,13 @@ sbatch run_indexing_bam.sh
 
 ## 4. Counting reads by Subread
 We use `featureCounts` in `Subread` to perform the reads counting.
-
 ```
+vi featureCounts_via_subread.sh
+
+##creat a featureCounts script - start line##
+
 #!/bin/bash
-#SBATCH --job-name=featureCounts_via_Subread_selfIndexRefGenome
+#SBATCH --job-name=featureCounts_via_subread
 #SBATCH --out="slurm-%j.out"
 #SBATCH --time=1-
 #SBATCH --nodes=1
@@ -332,18 +338,16 @@ We use `featureCounts` in `Subread` to perform the reads counting.
 #SBATCH --mem=64G
 #SBATCH --mail-type=ALL
 
-featureCounts -t exon -g gene_id -a ../Human_Ref_Genome/GCF_000001405.40_GRCh38.p14_genomic.gtf -o Yao_RNA_counts.txt G1_Rep1_selfIndex.bam G1_Rep2_selfIndex.bam G1_Rep3_selfIndex.bam G2_Rep1_selfIndex.bam G2_Rep2_selfIndex.bam G2_Rep3_selfIndex.bam
+featureCounts -s -T 24 -t exon -g gene_id -a ../3_mapping_via_hisat2/human_ref_genome/GCF_000001405.40_GRCh38.p14_genomic.gtf -o 2020_cancer_res_RNA_counts.txt BT474_Rep1.bam BT474_Rep2.bam BT474_Rep3.bam BT474_TRA_Rep1.bam BT474_TRA_Rep2.bam BT474_TRA_Rep3.bam BT474_TRA_PER_Rep1.bam BT474_TRA_PER_Rep2.bam BT474_TRA_PER_Rep3.bam BT_TR1_Rep1.bam BT_TR1_Rep2.bam BT_TR1_Rep3.bam BT_TR2_Rep1.bam BT_TR2_Rep2.bam BT_TR2_Rep3.bam BT_TPR1_Rep1.bam BT_TPR1_Rep2.bam BT_TPR1_Rep3.bam BT_TPR2_Rep1.bam BT_TPR2_Rep2.bam BT_TPR2_Rep3.bam
+
+##creat a featureCounts script - end line##
 
 module load Subread/2.0.3-GCC-10.2.0
-sbatch featureCounts_via_Subread_selfIndexRefGenome.sh
+sbatch featureCounts_via_subread.sh
 ```
-
-For paired-ended reads,
 ```
--p, paired-end reads
+-p, paired-end reads ##for paired-ended reads
 -s, strand-specific read counting
 -T, threads
-
-featureCounts -p -T 24 -t exon -g gene_id -a ../Human_Ref_Genome/GCF_000001405.40_GRCh38.p14_genomic.gtf -o Yao_RNA_counts.txt G1_Rep1_selfIndex.bam G1_Rep2_selfIndex.bam G1_Rep3_selfIndex.bam G2_Rep1_selfIndex.bam G2_Rep2_selfIndex.bam G2_Rep3_selfIndex.bam
 ```
-Then we use other tutorials to perform the downstream analysis.
+Then we use other tutorials to perform the downstream analysis: http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
