@@ -65,7 +65,7 @@ We can perform unzip and rename in a single step. Click the Metadata in **SRA Ru
 <img width="1208" alt="image" src="https://user-images.githubusercontent.com/24839999/206332508-36b927e6-cc88-4fcb-9859-a814031229fb.png">
 
 ```
-##Creat a sample information file
+##Creat a sample information file under 2020_cancer_res
 vi sample_info.txt
 
 SRR7997161	BT474_Rep1
@@ -94,7 +94,7 @@ We generate a sample_info.txt file here and copy content from metadata to this f
 
 Then we can use `sample_info.txt` to simply the downstream analysis. The final command line of unzip and rename is `gunzip -c raw_data_name.fastq.gz > novel_name.fastq`
 ```
-awk '{print "gunzip -c "$1".fastq.gz > "$2".fastq"}' sample_info.txt > unzip_rename.sh
+awk '{print "gunzip -c "$1".fastq.gz > "$2".fastq"}' ../sample_info.txt > unzip_rename.sh
 
 ##creat a data run_unzip_rename script - start line##
 
@@ -119,7 +119,7 @@ sbatch run_unzip_rename.sh
 ## 2. QC and trimming
 Previously, we can perform QC and Trimming seperately. However, the novel softwares are emerging, some are powerful enough to perform QC and Trimming in a single step, such as Fastp.
 
-I installed Fastp in my environment before. You can create a new environment called RNA_Seq (specified with the -n option) and install Fastp into it with the following command lines.
+I installed Fastp in my environment before. You can create a new environment called `RNA_Seq` (specified with the `-n` option) and install `fastp` into it with the following command lines.
 ```
 module load miniconda/4.9.2 #load miniconda in the module
 conda create -n RNA_Seq fastp
@@ -137,18 +137,22 @@ fastp -i in.fq -o out.fq
 ```
 fastp -i in.R1.fq.gz -I in.R2.fq.gz -o out.R1.fq.gz -O out.R2.fq.gz
 ```
-To begin the QC and trimming with Fastp, I make a novl directory under `2020_cancer_res` named `2_QC_trimming_via_fastp`.
-Taking `BT474_Rep1.fq` as an example, the command line is `fastp -i BT474_Rep1.fq -o BT474_Rep1_trimmed.fq`.
+To begin the QC and trimming with Fastp, I make a novel directory under `2020_cancer_res` named `2_QC_trimming_via_fastp` and move all the unzipped and renamed files into it.
+```
+mkdir 2_QC_trimming_via_fastp
+mv 1_raw_data/BT* 2_QC_trimming_via_fastp/
+```
+For the QC and trimming, taking `BT474_Rep1.fastq` as an example, the command line is `fastp -i BT474_Rep1.fastq -o BT474_Rep1_trimmed.fastq -h BT474_Rep1.html -j BT474_Rep1.json`.
 
 ```
-awk '{print "fastp -i "$2".fq -o "$2"_trimmed.fq"}' sample_info.txt > fastp.sh
+awk '{print "fastp -i "$2".fastq -o "$2"_trimmed.fastq -h "$2".html -j "$2".json"}' ../sample_info.txt > fastp.sh
 
-##creat a fastp_QC_trimming script - start line##
+##creat a run_fastp script - start line##
 
-vi fastp_QC_trimming.sh
+vi run_fastp.sh
 
 #!/bin/bash
-#SBATCH --job-name=fastp_QC_trimming
+#SBATCH --job-name=run_fastp
 #SBATCH --out="slurm-%j.out"
 #SBATCH --time=1-
 #SBATCH --nodes=1
@@ -156,11 +160,13 @@ vi fastp_QC_trimming.sh
 #SBATCH --mem=64G
 #SBATCH --mail-type=ALL
 
-fastp.sh
+source fastp.sh
 
-##creat a fastp_QC_trimming script - end line##
+##creat a run_fastp script - end line##
 
-sbatch fastp_QC_trimming.sh
+module load miniconda
+conda activate RNA_Seq
+sbatch run_fastp.sh
 ```
 ## 3. Mapping
 Mapping is the most important step in the RNA-seq analysis.
@@ -169,7 +175,6 @@ You can download the human reference genome from the following link: https://www
 
 ```
 wget https://www.ncbi.nlm.nih.gov/projects/r_gencoll/ftp_service/nph-gc-ftp-service.cgi/?HistoryId=MCID_6390e4bdef461250ef424de0&QueryKey=1&ReleaseType=RefSeq&FileType=GENOME_FASTA&Flat=true
-
 wget https://www.ncbi.nlm.nih.gov/projects/r_gencoll/ftp_service/nph-gc-ftp-service.cgi/?HistoryId=MCID_6390e4bdef461250ef424de0&QueryKey=1&ReleaseType=RefSeq&FileType=GENOME_GTF&Flat=true
 
 nohup gunzip GCF_000001405.40_GRCh38.p14_genomic.fna.gz &
@@ -206,7 +211,6 @@ We will use HISAT2 for RNA-seq reads mapping.
 hisat2 --new-summary -p 10 -x ./grch38_snp_tran/genome_snp_tran -U G1_Rep1_R1_val_1.fq -S G1_Rep1_R1.sam --rna-strandness RF --summary-file G1_Rep1_R1_alignment_summary.txt
 
 awk '{print "fastp -i "$2".fq -o "$2"_trimmed.fq"}' sample_info.txt > unpaired_hisat2.sh
-
 ```
 Here `-U` means unpaired, `--ran-strandness`, RF. Then we generate `run_unpaired_hisat2_mapping.sh`
 ```
