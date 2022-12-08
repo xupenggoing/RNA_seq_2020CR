@@ -115,3 +115,64 @@ gunzip.sh
 
 sbatch unzip_rename.sh
 ```
+## 2. QC and trimming
+Previously, we can perform QC and Trimming seperately. However, the novel softwares are emerging, some are powerful enough to perform QC and Trimming in a single step, such as Fastp.
+
+Previously, I have installed Fastp in my environment. You can create a new environment called RNA_Seq (specified with the -n option) and install fastp into it with the following command lines.
+```
+module load miniconda/4.9.2 #load miniconda in the module
+conda create -n RNA_Seq fastp
+
+##to use the applications in your environment, run the following##
+module load miniconda
+conda activate RNA_Seq
+```
+The sample usage of Fastp can refer to https://github.com/OpenGene/fastp
+- for single end data (not compressed)
+```
+fastp -i in.fq -o out.fq
+```
+- for paired end data (gzip compressed)
+```
+fastp -i in.R1.fq.gz -I in.R2.fq.gz -o out.R1.fq.gz -O out.R2.fq.gz
+```
+Taking `BT474_Rep1.fq` as an example, the command line is `fastp -i BT474_Rep1.fq -o BT474_Rep1_trimmed.fq`.
+
+```
+awk '{print "fastp -i "$2".fq -o "$2"_trimmed.fq"}' sample_info.txt > fastp.sh
+
+##creat a fastp_QC_trimming script - start line##
+
+vi fastp_QC_trimming.sh
+
+#!/bin/bash
+#SBATCH --job-name=fastp_QC_trimming
+#SBATCH --out="slurm-%j.out"
+#SBATCH --time=1-
+#SBATCH --nodes=1
+#SBATCH -c 20
+#SBATCH --mem=64G
+#SBATCH --mail-type=ALL
+
+fastp.sh
+
+##creat a fastp_QC_trimming script - end line##
+
+sbatch fastp_QC_trimming.sh
+```
+## 3. Mapping
+Mapping is the most important step in the RNA-seq analysis.
+### 3.1 Build human reference genome
+
+
+### 3.2 Mapping to the reference genome
+
+### 3.3 SAM files to BAM files
+
+
+### 3.4 Indexing BAM files
+
+
+## 4. Counting reads by Subread
+We use `featureCounts` in `Subread` to perform the reads counting.
+
