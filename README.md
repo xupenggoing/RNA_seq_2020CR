@@ -213,22 +213,20 @@ hisat2-build GCF_000001405.40_GRCh38.p14_genomic.fna hisat2_built_Genome 1>hisat
 
 module load HISAT2/2.2.1-gompi-2020b
 sbatch ref_genome_build.sh
-
 ```
 After the building, you will get 8 files. Previously, I have perform the same steps in other projects. So I don't need to re-run the code. I can use what I generated before. Find the location of the previous `Human_Ref_Genome` folder, then copy and paste it to the `human_ref_genome` folder directly.`cp` command can't copy directories, you need to add `-r` or `-R`.
 ```
 cp -r Human_Ref_Genome/ ~/scratch60/2020_cancer_res/3_mapping_via_hisat2/
-mv Human_Ref_Genome/ human_ref_genome
+mv Human_Ref_Genome/ human_ref_genome/
 ```
 ### 3.2 Mapping to the reference genome
-We will use HISAT2 for RNA-seq reads mapping.
+We will use HISAT2 for RNA-seq reads mapping.`hisat2 --new-summary -p 10 -x ./human_ref_genome/hisat2_built_Genome -U BT474_Rep1_trimmed.fastq -S BT474_Rep1.sam --rna-strandness F --summary-file BT474_Rep1_alignment_summary.txt`
 
 ```
-hisat2 --new-summary -p 10 -x ./grch38_snp_tran/genome_snp_tran -U G1_Rep1_R1_val_1.fq -S G1_Rep1_R1.sam --rna-strandness RF --summary-file G1_Rep1_R1_alignment_summary.txt
-
-awk '{print "fastp -i "$2".fq -o "$2"_trimmed.fq"}' sample_info.txt > unpaired_hisat2.sh
+awk '{print "hisat2 --new-summary -p 10 -x ./human_ref_genome/hisat2_built_Genome -U "$2"_trimmed.fastq -S "$2".sam --rna-strandness F --summary-file "$2"_alignment_summary.txt"}' ../sample_info.txt > unpaired_hisat2.sh
 ```
-Here `-U` means unpaired, `--ran-strandness`, RF. Then we generate `run_unpaired_hisat2_mapping.sh`
+Here `-U` means unpaired, `--ran-strandness`, for single-end reads, use `F` or `R`.‘F’ means a read corresponds to a transcript.
+‘R’ means a read corresponds to the reverse complemented counterpart of a transcript. Then we generate `run_unpaired_hisat2_mapping.sh`
 ```
 vi run_unpaired_hisat2_mapping.sh
 
@@ -243,20 +241,22 @@ vi run_unpaired_hisat2_mapping.sh
 #SBATCH --mem=64G
 #SBATCH --mail-type=ALL
 
-unpaired_hisat2.sh
+source unpaired_hisat2.sh
 
-##creat a run_unpaired_hisat2_mapping script - start line##
+##creat a run_unpaired_hisat2_mapping script - end line##
 
+module unload miniconda
 module load HISAT2/2.2.1-gompi-2020b
 sbatch run_unpaired_hisat2_mapping.sh
+```
 
 ### 3.3 SAM files to BAM files
 
-We use Samtools to convert SAM files to BAM files.
+We use Samtools to convert SAM files to BAM files.`samtools sort G1_Rep1.sam -o G1_Rep1.bam`
 ```
-samtools sort G1_Rep1.sam -o G1_Rep1.bam
 awk '{print "fastp -i "$2".fq -o "$2"_trimmed.fq"}' sample_info.txt > sam2bam.sh
-
+```
+Creat `run_sam2bam.sh`
 ```
 vi run_sam2bam.sh
 
