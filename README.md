@@ -220,7 +220,7 @@ cp -r Human_Ref_Genome/ ~/scratch60/2020_cancer_res/3_mapping_via_hisat2/
 mv Human_Ref_Genome/ human_ref_genome/
 ```
 ### 3.2 Mapping to the reference genome
-We will use HISAT2 for RNA-seq reads mapping.`hisat2 --new-summary -p 10 -x ./human_ref_genome/hisat2_built_Genome -U BT474_Rep1_trimmed.fastq -S BT474_Rep1.sam --rna-strandness F --summary-file BT474_Rep1_alignment_summary.txt`
+We will use HISAT2 for RNA-seq reads mapping. The uasge of HISAT2 can refer to http://daehwankimlab.github.io/hisat2/manual/. `hisat2 --new-summary -p 10 -x ./human_ref_genome/hisat2_built_Genome -U BT474_Rep1_trimmed.fastq -S BT474_Rep1.sam --rna-strandness F --summary-file BT474_Rep1_alignment_summary.txt`
 
 ```
 awk '{print "hisat2 --new-summary -p 10 -x ./human_ref_genome/hisat2_built_Genome -U "$2"_trimmed.fastq -S "$2".sam --rna-strandness F --summary-file "$2"_alignment_summary.txt"}' ../sample_info.txt > unpaired_hisat2.sh
@@ -249,12 +249,23 @@ module unload miniconda
 module load HISAT2/2.2.1-gompi-2020b
 sbatch run_unpaired_hisat2_mapping.sh
 ```
-
-### 3.3 SAM files to BAM files
-
-We use Samtools to convert SAM files to BAM files.`samtools sort G1_Rep1.sam -o G1_Rep1.bam`
+After mapping, make a novel directory for the `summary.txt` files.
 ```
-awk '{print "fastp -i "$2".fq -o "$2"_trimmed.fq"}' sample_info.txt > sam2bam.sh
+mkdir alignment_summary
+mv *summary.txt ./alignment_summary
+```
+### 3.3 SAM files to BAM files
+Before performing format transforming, I'd like to make a novel directory `4_sam2bam` under `2020_cancer_res` and move the generated sam files into it.
+```
+mkdir 4_sam2bam
+cd 4_sam2bam
+mv ../3_mapping_via_hisat2/*.sam ./
+```
+We use Samtools to convert SAM files to BAM files. The uasge of Samtools: http://www.htslib.org/doc/samtools.html
+
+Simple usage `samtools sort BT474_Rep1.sam -o BT474_Rep1.bam`
+```
+awk '{print "samtools sort "$2".sam -o "$2".bam"}' ../sample_info.txt > sam2bam.sh
 ```
 Creat `run_sam2bam.sh`
 ```
@@ -271,7 +282,8 @@ vi run_sam2bam.sh
 #SBATCH --mem=64G
 #SBATCH --mail-type=ALL
 
-sam2bam.sh
+source sam2bam.sh
+
 ##creat a run_sam2bam script - end line##
 
 module load SAMtools/1.16-GCCcore-10.2.0
