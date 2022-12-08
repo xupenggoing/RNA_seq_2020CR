@@ -168,11 +168,24 @@ module load miniconda
 conda activate RNA_Seq
 sbatch run_fastp.sh
 ```
+After the QC and trimming by Fastp, I will get three types of files: one ended up with `trimmed.fastq`, one with `.html`, and one with `.json`. Make novel directories for `.html` and `.json` files.
+```
+mkdir html_files
+mkdir json_files
+mv *.html ./html_files
+mv *.json ./json_files
+```
 ## 3. Mapping
-Mapping is the most important step in the RNA-seq analysis.
+Mapping is the most important step in the RNA-seq analysis. Before mapping, make a directory `3_mapping_via_hisat2` under `2020_cancer_res` and move all the *trimmed.fastq` files in `2020_cancer_res/2_QC_trimming_via_fastp` into it. 
+```
+mkdir 3_mapping_via_hisat2
+cd 3_mapping_via_hisat2
+mv ../2_QC_trimming_via_fastp/*trimmed.fastq ./
+```
 ### 3.1 Build human reference genome
 You can download the human reference genome from the following link: https://www.ncbi.nlm.nih.gov/assembly/GCF_000001405.40. Note that you need to download both reference genome data (.fna) and annotation data (.gft). You can download them to you laptop and then tranfer then to the web server. Also, you can download them to the web server directly via `wget link_address`.
 
+Before building the human reference genome, make a directory `human_ref_genome` for it, then perform the following steps.
 ```
 wget https://www.ncbi.nlm.nih.gov/projects/r_gencoll/ftp_service/nph-gc-ftp-service.cgi/?HistoryId=MCID_6390e4bdef461250ef424de0&QueryKey=1&ReleaseType=RefSeq&FileType=GENOME_FASTA&Flat=true
 wget https://www.ncbi.nlm.nih.gov/projects/r_gencoll/ftp_service/nph-gc-ftp-service.cgi/?HistoryId=MCID_6390e4bdef461250ef424de0&QueryKey=1&ReleaseType=RefSeq&FileType=GENOME_GTF&Flat=true
@@ -202,8 +215,11 @@ module load HISAT2/2.2.1-gompi-2020b
 sbatch ref_genome_build.sh
 
 ```
-After the building, you will get 8 files. Previously, I have perform the same steps in other projects. So I don't need to re-run the code. I can use what I generated before.
-
+After the building, you will get 8 files. Previously, I have perform the same steps in other projects. So I don't need to re-run the code. I can use what I generated before. Find the location of the previous `Human_Ref_Genome` folder, then copy and paste it to the `human_ref_genome` folder directly.`cp` command can't copy directories, you need to add `-r` or `-R`.
+```
+cp -r Human_Ref_Genome/ ~/scratch60/2020_cancer_res/3_mapping_via_hisat2/
+mv Human_Ref_Genome/ human_ref_genome
+```
 ### 3.2 Mapping to the reference genome
 We will use HISAT2 for RNA-seq reads mapping.
 
