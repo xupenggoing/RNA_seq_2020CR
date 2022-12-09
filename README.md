@@ -357,14 +357,15 @@ But when I analysed the assignment status, I found a considerable proportion of 
 <img width="1007" alt="image" src="https://user-images.githubusercontent.com/24839999/206613616-74d63dd4-3e3b-408b-be20-659b595e9949.png">
 
 Also the discussion is quite enlightening: https://help.galaxyproject.org/t/unassigned-multimapping-in-featurecounts/2399/3
-I compared several conditions, and finally I choose **`-s 0 -M --fraction`** for `featureCounts`.
+I compared several conditions, and finally I choose **`-s 0 -M`** for `featureCounts`.
 
 After counting the reads, I creat a novel directory `5_readscounting_via_featureCounts` under `2020_cancer_res` and move all the results `*.txt` and `.summary` into it.
 ```
 mkdir 5_readscounting_via_featureCounts
 cd 5_readscounting_via_featureCounts
-mv ../4_sam2bam/*.txt ./
-mv ../4_sam2bam/*.summary ./
+mkdir expression_matrix_summary
+mv ../4_sam2bam/*.txt ./expression_matrix_summary/
+mv ../4_sam2bam/*.summary ./expression_matrix_summary/
 ```
 
 Then we use other tutorials to perform the downstream analysis: http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
