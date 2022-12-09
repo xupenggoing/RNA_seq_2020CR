@@ -351,12 +351,6 @@ More configurations:
 - `-T`, threads
 - `-p`, paired-end reads ##for paired-ended reads
 
-After counting the reads, I creat a novel directory `5_readscounting_via_featureCounts` under `2020_cancer_res` and mv the result `2020_cancer_res_RNA_counts.txt` into it.
-```
-mkdir 5_readscounting_via_featureCounts
-cd 5_readscounting_via_featureCounts
-mv ../4_sam2bam/2020_cancer_res_RNA_counts.txt ./
-```
 But when I analysed the assignment status, I found a considerable proportion of `Unassigned_MultiMapping`. The User Guide of Subread has some solutions for this condition.
 
 <img width="1006" alt="image" src="https://user-images.githubusercontent.com/24839999/206613535-e9f3cb92-9dcc-4115-86d4-30e8e26a32ce.png">
@@ -364,5 +358,13 @@ But when I analysed the assignment status, I found a considerable proportion of 
 
 Also the discussion is quite enlightening: https://help.galaxyproject.org/t/unassigned-multimapping-in-featurecounts/2399/3
 I compared several conditions, and finally I choose `-s 0 -M -fraction` for `featureCounts`.
+
+After counting the reads, I creat a novel directory `5_readscounting_via_featureCounts` under `2020_cancer_res` and move all the results `*.txt` and `.summary` into it.
+```
+mkdir 5_readscounting_via_featureCounts
+cd 5_readscounting_via_featureCounts
+mv ../4_sam2bam/*.txt ./
+mv ../4_sam2bam/*.summary ./
+```
 
 Then we use other tutorials to perform the downstream analysis: http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
