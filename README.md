@@ -1,4 +1,4 @@
-# RNA_seq_pipeline_2020_Cancer_Res
+# RNA_seq_2020CR
 This is the learning note for a *Cancer Research* paper published in 2020 (https://pubmed.ncbi.nlm.nih.gov/31690671/). I downloaded the raw data and re-analyzed it. Considering the pipeline and software I used are different from the original paper, the results may vary a little bit.
 
 Since I'm a beginner of bioinformatics; so, I'd like to put it as detailed as possible. All the analyses below were performed on Yale HPC web server; thus, some command lines are only suitable for the Yale web server users, such as `sbatch`. However, it's easy to make minor changes and get your own versions.
