@@ -339,7 +339,7 @@ vi featureCounts_via_subread.sh
 #SBATCH --mem=64G
 #SBATCH --mail-type=ALL
 
-featureCounts -s 1 -T 24 -t exon -g gene_id -a ../3_mapping_via_hisat2/human_ref_genome/GCF_000001405.40_GRCh38.p14_genomic.gtf -o 2020_cancer_res_RNA_counts.txt BT474_Rep1.bam BT474_Rep2.bam BT474_Rep3.bam BT474_TRA_Rep1.bam BT474_TRA_Rep2.bam BT474_TRA_Rep3.bam BT474_TRA_PER_Rep1.bam BT474_TRA_PER_Rep2.bam BT474_TRA_PER_Rep3.bam BT_TR1_Rep1.bam BT_TR1_Rep2.bam BT_TR1_Rep3.bam BT_TR2_Rep1.bam BT_TR2_Rep2.bam BT_TR2_Rep3.bam BT_TPR1_Rep1.bam BT_TPR1_Rep2.bam BT_TPR1_Rep3.bam BT_TPR2_Rep1.bam BT_TPR2_Rep2.bam BT_TPR2_Rep3.bam
+featureCounts -s 0 -T 24 -t exon -g gene_id -a ../3_mapping_via_hisat2/human_ref_genome/GCF_000001405.40_GRCh38.p14_genomic.gtf -o 2020_cancer_res_RNA_counts.txt BT474_Rep1.bam BT474_Rep2.bam BT474_Rep3.bam BT474_TRA_Rep1.bam BT474_TRA_Rep2.bam BT474_TRA_Rep3.bam BT474_TRA_PER_Rep1.bam BT474_TRA_PER_Rep2.bam BT474_TRA_PER_Rep3.bam BT_TR1_Rep1.bam BT_TR1_Rep2.bam BT_TR1_Rep3.bam BT_TR2_Rep1.bam BT_TR2_Rep2.bam BT_TR2_Rep3.bam BT_TPR1_Rep1.bam BT_TPR1_Rep2.bam BT_TPR1_Rep3.bam BT_TPR2_Rep1.bam BT_TPR2_Rep2.bam BT_TPR2_Rep3.bam
 
 ##creat a featureCounts script - end line##
 
@@ -357,7 +357,7 @@ But when I analysed the assignment status, I found a considerable proportion of 
 <img width="1007" alt="image" src="https://user-images.githubusercontent.com/24839999/206613616-74d63dd4-3e3b-408b-be20-659b595e9949.png">
 
 Also the discussion is quite enlightening: https://help.galaxyproject.org/t/unassigned-multimapping-in-featurecounts/2399/3
-I compared several conditions, and finally I choose `-s 0 -M -fraction` for `featureCounts`.
+I compared several conditions, and finally I choose **`-s 0 -M --fraction`** for `featureCounts`.
 
 After counting the reads, I creat a novel directory `5_readscounting_via_featureCounts` under `2020_cancer_res` and move all the results `*.txt` and `.summary` into it.
 ```
