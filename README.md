@@ -1,13 +1,15 @@
-# Cancer_Res_2020
-This is the learning notes of *Cancer Research* paper published by our lab in 2020 (doi: 10.1158/0008-5472). Since I'm a beginner of bioinformatics; so, I'd like to put it as detailed as possible. All the analyses below were performed on Yale HPC web server; thus, some command lines may be only suitable for the Yale web server users. However, it's easy to make minor changes and get your own versions.
+# RNA_seq_pipeline_2020_Cancer_Res
+What I wrote below is the pipeline for a *Cancer Research* paper published by our lab in 2020 (doi: 10.1158/0008-5472). I downloaded the raw data and re-analyzed it. Since the pipeline and software I used are different from the original paper, the results may vary to some extend.
+
+Since I'm a beginner of bioinformatics; so, I'd like to put it as detailed as possible. All the analyses below were performed on Yale HPC web server; thus, some command lines may be only suitable for the Yale web server users. However, it's easy to make minor changes and get your own versions.
 
 ## 1. Data preparation
 According to the description of paper: RNA-sequencing (RNA-seq) data were deposited in the National Center for Biotechnology Information (NCBI) Gene Expression Omnibus database under accession number GSE121105. Searching **GSE121105**, we find there are 21 datasets. From the description here and the original paper, we need to figure out the experimental design.
 
 ### 1.1 Download Datasets
-In GEO page, we can acquire **SRP164949**, also we can click the **SRA Run Selector**, from which we can get more detailed information about the experiment design. Here are several important information: 1) the cells come from human; 2) this is the single-ended sequencing; 3) sequencing platform is Illumina HiSeq 2000; 4) the AvgSpotLen is 100.
+In GEO page, we can acquire **SRP164949**, also we can click the **SRA Run Selector**, from which we can get more detailed information about the experiment design. Here are several important information: 1) the cells come from human, so the data needs to be mapped to human genome; 2) this is the single-ended sequencing; 3) sequencing platform is Illumina HiSeq 2000; 4) the AvgSpotLen is 100.
 
-To download these original data, I prefer to use SRA Explorer. When I search SRP164949, I can get 21 results. Click the box on the left side of Title, `add 21 to collection`. Click upright `21 saved datasets` and click `Raw FastQ Download URLs`.
+To download these original data, I prefer to use **SRA Explorer**. When I search **SRP164949**, I can find 21 results. Click the box on the left side of Title, `add 21 to collection`. Click upright `21 saved datasets` and click `Raw FastQ Download URLs`.
 
 ```
 mkdir 2020_cancer_res
@@ -60,7 +62,7 @@ I prefer to unzip and rename these datasets according to the experiment design. 
 
 <img width="1207" alt="image" src="https://user-images.githubusercontent.com/24839999/206330149-cf3df222-d7d4-4ab3-a3e5-81b5aa93e5da.png">
 
-We can perform unzip and rename in a single step. Click the Metadata in **SRA Run Selector**, by which you can download it. Open it with Microsoft Excel, choose Data->Text to Columns->Delimited->Next->Comma->Next->Finish. Then we can get the metadata and can easily sort out the file format we need.
+We can perform unzip and rename in a single step. Click the **Metadata** in **SRA Run Selector**, by which you can download it. Open it with Microsoft Excel, choose Data->Text to Columns->Delimited->Next->Comma->Next->Finish. Then we can get the metadata and can easily sort out the file format we need.
 
 <img width="1208" alt="image" src="https://user-images.githubusercontent.com/24839999/206332508-36b927e6-cc88-4fcb-9859-a814031229fb.png">
 
@@ -92,7 +94,7 @@ SRR7997181	BT_TPR2_Rep3
 ```
 We generate a sample_info.txt file here and copy content from metadata to this file. **TRA** is short for trastuzumab, **PER** is short for pertuzumab, **TR** stands for trastuzumab-resistant, **TPR** stands for trastuzumab + pertuzumab-resistant.
 
-Then we can use `sample_info.txt` to simply the downstream analysis. The final command line of unzip and rename is `gunzip -c raw_data_name.fastq.gz > novel_name.fastq`
+Then we can use `sample_info.txt` to simply the downstream analysis. The final command line of unzip_rename is `gunzip -c raw_data_name.fastq.gz > novel_name.fastq`. `-c` here is to keep the original data after unzip_rename.
 ```
 awk '{print "gunzip -c "$1".fastq.gz > "$2".fastq"}' ../sample_info.txt > unzip_rename.sh
 
@@ -225,8 +227,8 @@ We will use HISAT2 for RNA-seq reads mapping. The uasge of HISAT2 can refer to h
 ```
 awk '{print "hisat2 --new-summary -p 10 -x ./human_ref_genome/hisat2_built_Genome -U "$2"_trimmed.fastq -S "$2".sam --rna-strandness F --summary-file "$2"_alignment_summary.txt"}' ../sample_info.txt > unpaired_hisat2.sh
 ```
-Here `-U` means unpaired, `--ran-strandness`, for single-end reads, use `F` or `R`.‘F’ means a read corresponds to a transcript.
-‘R’ means a read corresponds to the reverse complemented counterpart of a transcript. Then we generate `run_unpaired_hisat2_mapping.sh`
+Here `-U` means unpaired, `--ran-strandness`, for single-end reads, use `F` or `R`. `F` means a read corresponds to a transcript.
+`R` means a read corresponds to the reverse complemented counterpart of a transcript. Then we generate `run_unpaired_hisat2_mapping.sh`
 ```
 vi run_unpaired_hisat2_mapping.sh
 
@@ -322,7 +324,7 @@ sbatch run_indexing_bam.sh
 ```
 
 ## 4. Counting reads by Subread
-We use `featureCounts` in `Subread` to perform the reads counting.
+We use `featureCounts` in `Subread` to perform the reads counting. The usage of featureCounts can refer to: https://bioconductor.org/packages/release/bioc/vignettes/Rsubread/inst/doc/SubreadUsersGuide.pdf
 ```
 vi featureCounts_via_subread.sh
 
@@ -337,7 +339,7 @@ vi featureCounts_via_subread.sh
 #SBATCH --mem=64G
 #SBATCH --mail-type=ALL
 
-featureCounts -s -T 24 -t exon -g gene_id -a ../3_mapping_via_hisat2/human_ref_genome/GCF_000001405.40_GRCh38.p14_genomic.gtf -o 2020_cancer_res_RNA_counts.txt BT474_Rep1.bam BT474_Rep2.bam BT474_Rep3.bam BT474_TRA_Rep1.bam BT474_TRA_Rep2.bam BT474_TRA_Rep3.bam BT474_TRA_PER_Rep1.bam BT474_TRA_PER_Rep2.bam BT474_TRA_PER_Rep3.bam BT_TR1_Rep1.bam BT_TR1_Rep2.bam BT_TR1_Rep3.bam BT_TR2_Rep1.bam BT_TR2_Rep2.bam BT_TR2_Rep3.bam BT_TPR1_Rep1.bam BT_TPR1_Rep2.bam BT_TPR1_Rep3.bam BT_TPR2_Rep1.bam BT_TPR2_Rep2.bam BT_TPR2_Rep3.bam
+featureCounts -s 1 -T 24 -t exon -g gene_id -a ../3_mapping_via_hisat2/human_ref_genome/GCF_000001405.40_GRCh38.p14_genomic.gtf -o 2020_cancer_res_RNA_counts.txt BT474_Rep1.bam BT474_Rep2.bam BT474_Rep3.bam BT474_TRA_Rep1.bam BT474_TRA_Rep2.bam BT474_TRA_Rep3.bam BT474_TRA_PER_Rep1.bam BT474_TRA_PER_Rep2.bam BT474_TRA_PER_Rep3.bam BT_TR1_Rep1.bam BT_TR1_Rep2.bam BT_TR1_Rep3.bam BT_TR2_Rep1.bam BT_TR2_Rep2.bam BT_TR2_Rep3.bam BT_TPR1_Rep1.bam BT_TPR1_Rep2.bam BT_TPR1_Rep3.bam BT_TPR2_Rep1.bam BT_TPR2_Rep2.bam BT_TPR2_Rep3.bam
 
 ##creat a featureCounts script - end line##
 
@@ -345,9 +347,9 @@ module load Subread/2.0.3-GCC-10.2.0
 sbatch featureCounts_via_subread.sh
 ```
 More configurations:
-- -p, paired-end reads ##for paired-ended reads
-- -s, strand-specific read counting
-- -T, threads
+- `-s` specifies strand-specific read counting. `0` for unstranded reads, `1` for stranded reads and `2` for reversely stranded reads. This depends on the library used in the sequencing protocol.
+- `-T`, threads
+- `-p`, paired-end reads ##for paired-ended reads
 
 After counting the reads, I creat a novel directory `5_readscounting_via_featureCounts` under `2020_cancer_res` and mv the result `2020_cancer_res_RNA_counts.txt` into it.
 ```
@@ -355,4 +357,12 @@ mkdir 5_readscounting_via_featureCounts
 cd 5_readscounting_via_featureCounts
 mv ../4_sam2bam/2020_cancer_res_RNA_counts.txt ./
 ```
+But when I analysed the assignment status, I found a considerable proportion of `Unassigned_MultiMapping`. The User Guide of Subread has some solutions for this condition.
+
+<img width="1006" alt="image" src="https://user-images.githubusercontent.com/24839999/206613535-e9f3cb92-9dcc-4115-86d4-30e8e26a32ce.png">
+<img width="1007" alt="image" src="https://user-images.githubusercontent.com/24839999/206613616-74d63dd4-3e3b-408b-be20-659b595e9949.png">
+
+Also the discussion is quite enlightening: https://help.galaxyproject.org/t/unassigned-multimapping-in-featurecounts/2399/3
+I compared several conditions, and finally I choose `-s 0 -M -fraction` for `featureCounts`.
+
 Then we use other tutorials to perform the downstream analysis: http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
