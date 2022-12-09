@@ -1,19 +1,22 @@
 # RNA_seq_pipeline_2020_Cancer_Res
-What I wrote below is the pipeline for a *Cancer Research* paper published by our lab in 2020 (doi: 10.1158/0008-5472). I downloaded the raw data and re-analyzed it. Since the pipeline and software I used are different from the original paper, the results may vary to some extend.
+This is the learning note for a *Cancer Research* paper published in 2020 (https://pubmed.ncbi.nlm.nih.gov/31690671/). I downloaded the raw data and re-analyzed it. Considering the pipeline and software I used are different from the original paper, the results may vary a little bit.
 
-Since I'm a beginner of bioinformatics; so, I'd like to put it as detailed as possible. All the analyses below were performed on Yale HPC web server; thus, some command lines may be only suitable for the Yale web server users. However, it's easy to make minor changes and get your own versions.
+Since I'm a beginner of bioinformatics; so, I'd like to put it as detailed as possible. All the analyses below were performed on Yale HPC web server; thus, some command lines are only suitable for the Yale web server users, such as `sbatch`. However, it's easy to make minor changes and get your own versions.
 
 ## 1. Data preparation
-According to the description of paper: RNA-sequencing (RNA-seq) data were deposited in the National Center for Biotechnology Information (NCBI) Gene Expression Omnibus database under accession number GSE121105. Searching **GSE121105**, we find there are 21 datasets. From the description here and the original paper, we need to figure out the experimental design.
+According to the description of paper: RNA-sequencing (RNA-seq) data were deposited in the National Center for Biotechnology Information (NCBI) Gene Expression Omnibus database under accession number **GSE121105**. Searching it in GEO, there are 21 datasets.
 
 ### 1.1 Download Datasets
-In GEO page, we can acquire **SRP164949**, also we can click the **SRA Run Selector**, from which we can get more detailed information about the experiment design. Here are several important information: 1) the cells come from human, so the data needs to be mapped to human genome; 2) this is the single-ended sequencing; 3) sequencing platform is Illumina HiSeq 2000; 4) the AvgSpotLen is 100.
+In GEO webpage, we can acquire **SRP164949** and click the **SRA Run Selector** to get more detailed information about the experiment design. Here are several important information: 1) the cells come from human, so the data needs to be mapped to human genome; 2) this is the single-end sequencing; 3) sequencing platform is Illumina HiSeq 2000; 4) the AvgSpotLen is 100.
 
 To download these original data, I prefer to use **SRA Explorer**. When I search **SRP164949**, I can find 21 results. Click the box on the left side of Title, `add 21 to collection`. Click upright `21 saved datasets` and click `Raw FastQ Download URLs`.
 
 ```
+##creat a new workspace for this project
 mkdir 2020_cancer_res
 cd 2020_cancer_res
+
+##creat a new directory for the raw data
 mkdir 1_raw_data
 cd 1_raw_data
 
@@ -62,7 +65,7 @@ I prefer to unzip and rename these datasets according to the experiment design. 
 
 <img width="1207" alt="image" src="https://user-images.githubusercontent.com/24839999/206330149-cf3df222-d7d4-4ab3-a3e5-81b5aa93e5da.png">
 
-We can perform unzip and rename in a single step. Click the **Metadata** in **SRA Run Selector**, by which you can download it. Open it with Microsoft Excel, choose Data->Text to Columns->Delimited->Next->Comma->Next->Finish. Then we can get the metadata and can easily sort out the file format we need.
+We can perform unzip and rename in a single step. Click the **Metadata** in **SRA Run Selector** to download it. Open it with Microsoft Excel, choose Data->Text to Columns->Delimited->Next->Comma->Next->Finish. Then we can get the metadata and can easily sort out the file format we need.
 
 <img width="1208" alt="image" src="https://user-images.githubusercontent.com/24839999/206332508-36b927e6-cc88-4fcb-9859-a814031229fb.png">
 
@@ -357,7 +360,10 @@ But when I analysed the assignment status, I found a considerable proportion of 
 <img width="1007" alt="image" src="https://user-images.githubusercontent.com/24839999/206613616-74d63dd4-3e3b-408b-be20-659b595e9949.png">
 
 Also the discussion is quite enlightening: https://help.galaxyproject.org/t/unassigned-multimapping-in-featurecounts/2399/3
+
 I compared several conditions, and finally I choose **`-s 0 -M`** for `featureCounts`.
+
+<img width="1250" alt="image" src="https://user-images.githubusercontent.com/24839999/206733262-a6f142ad-39e2-4835-8c9e-e4fdb8684304.png">
 
 After counting the reads, I creat a novel directory `5_readscounting_via_featureCounts` under `2020_cancer_res` and move all the results `*.txt` and `.summary` into it.
 ```
