@@ -7,7 +7,7 @@ Since I'm a beginner of bioinformatics; so, I'd like to put it as detailed as po
 According to the description of paper: RNA-sequencing (RNA-seq) data were deposited in the National Center for Biotechnology Information (NCBI) Gene Expression Omnibus database under accession number **GSE121105**. Searching it in GEO, there are 21 datasets.
 
 ### 1.1 Download Datasets
-In GEO webpage, we can acquire **SRP164949** and click the **SRA Run Selector** to get more detailed information about the experiment design. Here are several important information: 1) the cells come from human, so the data needs to be mapped to human genome; 2) this is the single-end sequencing; 3) sequencing platform is Illumina HiSeq 2000; 4) the AvgSpotLen is 100.
+On GEO webpage, we can acquire **SRP164949** and click the **SRA Run Selector** to get more detailed information about the experiment design. Here are several important pieces of information: 1) the cells come from human, so the data needs to be mapped to human genome; 2) this is the single-end sequencing; 3) sequencing platform is Illumina HiSeq 2000; 4) the AvgSpotLen is 100.
 
 To download these original data, I prefer to use **SRA Explorer**. When I search **SRP164949**, I can find 21 results. Click the box on the left side of Title, `add 21 to collection`. Click upright `21 saved datasets` and click `Raw FastQ Download URLs`.
 
